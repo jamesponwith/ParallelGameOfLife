@@ -16,8 +16,7 @@
 #include <string.h>
 
 // Forward function declarations
-
-
+FILE* openFile(char *ascii_filename);
 
 /**
  * Prints out a reminder of how to run the program.
@@ -28,8 +27,8 @@ void usage(char *executable_name) {
 	printf("Usage: %s *rest of the args*", executable_name);
 }
 
-
 int main(int argc, char *argv[]) {
+	char *ascii_filename = NULL;
 
 	// Step 1: Parse command line args (I recommend using getopt again).
 	// You need to support the "-c" and "-v" options for the basic requirements.
@@ -41,6 +40,7 @@ int main(int argc, char *argv[]) {
 	while ((c == getopt(argc, argv, "")) != -1) {
 		switch(c) {
 			case 'c':
+				ascii_filename = optarg;
 				break;
 			case 'v':
 				break;
@@ -67,3 +67,32 @@ int main(int argc, char *argv[]) {
 	// then print that out.
 	return 0;
 }
+/**
+	num rows
+	num cols
+	num iterations
+	num of following coordinate pairs; set each (c, r) value to 1
+	c r
+	c r 
+	...
+ */
+
+/**
+ * Opens a file and returns a pointer to it.
+ * If file does not exits, program exits(1).
+ *
+ * @param trace_file The file from which to read.
+ *
+ * @return fp The pointer to the file object created
+ */
+
+FILE* openFile(char *ascii_filename) {
+	FILE *fp = fopen(ascii_filename, "r");
+	if (fp == NULL) {
+		printf("No such file\n");
+		exit(1);
+	}
+	printf("trace file read\n");
+	return fp;
+}
+
