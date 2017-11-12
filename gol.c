@@ -20,12 +20,15 @@ typedef struct {
 	int num_cols;
 	int num_its;
 	int num_pairs;
-} Board;
+	int size;
+} BoardSpecs;
 
 // Forward function declarations
 void printError(); 
-void initBoard(char *ascii_filename, Board *b);
-void printBoardSpecs(Board *b); 
+int* initBoard(char *ascii_filename, BoardSpecs *b);
+void printBoardSpecs(BoardSpecs *b); 
+void printBoard(int *board, BoardSpecs *bs); 
+int getIndex(int row, int col, int n_cols) { return row*n_cols+col; }
 
 /**
  * Prints out a reminder of how to run the program.
@@ -37,8 +40,9 @@ void usage(char *executable_name) {
 }
 
 int main(int argc, char *argv[]) {
-	Board *board = malloc(sizeof(Board));
+	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
 	char *ascii_filename;
+	int *board;
 	//int verbose = 0;
 
 	// Step 1: Parse command line args (I recommend using getopt again).
@@ -70,8 +74,10 @@ int main(int argc, char *argv[]) {
 	// Step 2: Read in the configuration file and use it to initialize your game
 	// board. Write a function to do this for you.
 	
-	initBoard(ascii_filename, board);
-	printBoardSpecs(board);
+	board = initBoard(ascii_filename, bs);
+	printBoardSpecs(bs);
+	printf("\n");
+	printBoard(board, bs);
 	// Step 3: Start your timer
 	
 	// Step 4: Simulate for the required number of steps.
@@ -80,49 +86,73 @@ int main(int argc, char *argv[]) {
 	// Step 5: Stop your timer, calculate amount of time simulation ran for and
 	// then print that out.
 	free(board);
+	free(bs);
 	return 0;
 }
-/**
-	num rows
-	num cols
-	num its 
-	num of following coordinate pairs; set each (c, r) value to 1
-	c r
-	c r 
-	...
- */
 
 /**
  * Initializes the board for the game.
- *
  * @param *fp The file object with board specifications
- * @param *board The board struct with its specs
+ * @param *bs The board struct with its specs
+ * @return the 2d board array, in a 1d int pointer array
  */
-void initBoard(char* ascii_filename, Board *b) {
+int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 	FILE *fp = fopen(ascii_filename, "r");
+	int *board;
+	int col;
+	int row;
+
 	if ((fp) == NULL) {
 		printf("No such file\n");
 		exit(1);
 	}
-	
-	if((fscanf(fp, "%d", &b->num_rows) ||
-		fscanf(fp, "%d", &b->num_cols) || 
-		fscanf(fp, "%d", &b->num_its)  ||
-		fscanf(fp, "%d", &b->num_pairs )) != 1) {
-			printError();
+
+	fscanf(fp, "%d", &bs->num_rows);
+	fscanf(fp, "%d", &bs->num_cols);
+	fscanf(fp, "%d", &bs->num_its);
+	fscanf(fp, "%d", &bs->num_pairs);
+	bs->size = bs->num_cols * bs->num_rows;
+
+	board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int));
+
+	// spots for initial state
+	for (int i= 0; i < bs->num_pairs; i++) {
+		fscanf(fp, "%d %d", &col, &row); 
+		int index = getIndex(row, col, bs->num_cols);
+		board[index] = 1;
 	}
 
 	fclose(fp);
+	return board;
 }	
 
-void printBoardSpecs(Board *b) {
-	printf("Num rows: %d\n", b->num_rows); 
-	printf("Num cols: %d\n", b->num_cols);  
-	printf("Num its:  %d\n", b->num_its); 
-	printf("Pairs:    %d\n", b->num_pairs);
+/**
+ * Prints out the board
+ * @param *board The game board
+ * @param *bs The board's specs
+ */
+void printBoard(int *board, BoardSpecs *bs) {
+	for (int i = 0; i < bs->size; i++) {
+		if (board[i] == 0) {
+			printf(". ");
+		}
+		else {
+			printf("@ ");
+		}
+		if (((i + 1) % bs->num_cols) == 0) {
+			printf("\n");
+		}
+	}
 }
 
-
-void printError() {
-	printf("file data invalid");
+/**
+ * Prints out board specs
+ * @param *bs the board's specs
+ */
+void printBoardSpecs(BoardSpecs *bs) {
+	printf("Num rows: %d\n", bs->num_rows); 
+	printf("Num cols: %d\n", bs->num_cols);  
+	printf("Num its:  %d\n", bs->num_its); 
+	printf("Pairs:    %d\n", bs->num_pairs);
 }
+
