@@ -15,8 +15,17 @@
 #include <sys/time.h>
 #include <string.h>
 
+typedef struct {
+	int num_rows;
+	int num_cols;
+	int num_its;
+	int num_pairs;
+} Board;
+
 // Forward function declarations
-FILE* openFile(char *ascii_filename);
+void printError(); 
+void initBoard(char *ascii_filename, Board *b);
+void printBoardSpecs(Board *b); 
 
 /**
  * Prints out a reminder of how to run the program.
@@ -28,7 +37,9 @@ void usage(char *executable_name) {
 }
 
 int main(int argc, char *argv[]) {
-	char *ascii_filename = NULL;
+	Board *board = malloc(sizeof(Board));
+	char *ascii_filename;
+	//int verbose = 0;
 
 	// Step 1: Parse command line args (I recommend using getopt again).
 	// You need to support the "-c" and "-v" options for the basic requirements.
@@ -37,12 +48,13 @@ int main(int argc, char *argv[]) {
 	opterr = 0;
 	int c = -1;
 
-	while ((c == getopt(argc, argv, "")) != -1) {
+	while ((c = getopt(argc, argv, "c:")) != -1) {
 		switch(c) {
 			case 'c':
 				ascii_filename = optarg;
 				break;
 			case 'v':
+				//verbose = 1;
 				break;
 			case 'l':
 				break;
@@ -58,6 +70,8 @@ int main(int argc, char *argv[]) {
 	// Step 2: Read in the configuration file and use it to initialize your game
 	// board. Write a function to do this for you.
 	
+	initBoard(ascii_filename, board);
+	printBoardSpecs(board);
 	// Step 3: Start your timer
 	
 	// Step 4: Simulate for the required number of steps.
@@ -65,12 +79,13 @@ int main(int argc, char *argv[]) {
 	
 	// Step 5: Stop your timer, calculate amount of time simulation ran for and
 	// then print that out.
+	free(board);
 	return 0;
 }
 /**
 	num rows
 	num cols
-	num iterations
+	num its 
 	num of following coordinate pairs; set each (c, r) value to 1
 	c r
 	c r 
@@ -78,21 +93,36 @@ int main(int argc, char *argv[]) {
  */
 
 /**
- * Opens a file and returns a pointer to it.
- * If file does not exits, program exits(1).
+ * Initializes the board for the game.
  *
- * @param trace_file The file from which to read.
- *
- * @return fp The pointer to the file object created
+ * @param *fp The file object with board specifications
+ * @param *board The board struct with its specs
  */
-
-FILE* openFile(char *ascii_filename) {
+void initBoard(char* ascii_filename, Board *b) {
 	FILE *fp = fopen(ascii_filename, "r");
-	if (fp == NULL) {
+	if ((fp) == NULL) {
 		printf("No such file\n");
 		exit(1);
 	}
-	printf("trace file read\n");
-	return fp;
+	
+	if((fscanf(fp, "%d", &b->num_rows) ||
+		fscanf(fp, "%d", &b->num_cols) || 
+		fscanf(fp, "%d", &b->num_its)  ||
+		fscanf(fp, "%d", &b->num_pairs )) != 1) {
+			printError();
+	}
+
+	fclose(fp);
+}	
+
+void printBoardSpecs(Board *b) {
+	printf("Num rows: %d\n", b->num_rows); 
+	printf("Num cols: %d\n", b->num_cols);  
+	printf("Num its:  %d\n", b->num_its); 
+	printf("Pairs:    %d\n", b->num_pairs);
 }
 
+
+void printError() {
+	printf("file data invalid");
+}
