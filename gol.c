@@ -7,7 +7,7 @@
  * description of this program.
  */
 
-#define _XOPEN_SOURCE 700
+#define _XOPEN_SOURCE 600
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,6 +24,7 @@ typedef struct {
 } BoardSpecs;
 
 struct timeval start_time;
+struct timeval curr_time;
 	
 
 // Forward function declarations
@@ -31,6 +32,7 @@ void printError();
 int* initBoard(char *ascii_filename, BoardSpecs *b);
 void printBoardSpecs(BoardSpecs *b); 
 void printBoard(int *board, BoardSpecs *bs); 
+void updateBoard(int *board, BoardSpecs *bs); 
 int getIndex(int row, int col, int n_cols) { return row*n_cols+col; }
 
 /**
@@ -44,8 +46,9 @@ void usage(char *executable_name) {
 
 int main(int argc, char *argv[]) {
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
-	char *ascii_filename;
-	int *board;
+	char *ascii_filename = NULL;
+	int *board = NULL;
+	int ret = 0;
 	//int verbose = 0;
 
 	opterr = 0;
@@ -79,6 +82,13 @@ int main(int argc, char *argv[]) {
 	printBoard(board, bs);
 	// Step 3: Start your timer
 	
+	ret = gettimeofday(&start_time, NULL);
+	printf("\n%d\n", start_time);	
+	
+	usleep(1000000);
+	
+	ret = gettimeofday(&curr_time, NULL);
+	printf("\n%d\n", curr_time);	
 	// Step 4: Simulate for the required number of steps.
 	// Again, you should put this in its own function
 	
@@ -93,6 +103,16 @@ int main(int argc, char *argv[]) {
  A live cell with four or more live neighbors dies due to overpopulation.
  A dead cell with exactly three live neighbors becomes alive.
  */
+/**
+ * Updates the values in the board array
+ * base off the rules of the game
+ *
+ * @param *board The board
+ * @param *bs The board's specs
+ */
+void updateBoard(int *board, BoardSpecs *bs) {
+	//logic of the board
+}
 
 /**
  * Initializes the board for the game.
