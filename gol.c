@@ -23,6 +23,9 @@ typedef struct {
 	int size;
 } BoardSpecs;
 
+struct timeval start_time;
+	
+
 // Forward function declarations
 void printError(); 
 int* initBoard(char *ascii_filename, BoardSpecs *b);
@@ -45,10 +48,6 @@ int main(int argc, char *argv[]) {
 	int *board;
 	//int verbose = 0;
 
-	// Step 1: Parse command line args (I recommend using getopt again).
-	// You need to support the "-c" and "-v" options for the basic requirements.
-	// The advanced requirements require you to add "-l" and "-n" options.
-	
 	opterr = 0;
 	int c = -1;
 
@@ -61,15 +60,15 @@ int main(int argc, char *argv[]) {
 				//verbose = 1;
 				break;
 			case 'l':
+				//advanced
 				break;
 			case 'n':
+				//advanced
 				break;
 			default:
 				usage(argv[0]);
 				exit(1);
-		}
-
-	}
+		} }
 	
 	// Step 2: Read in the configuration file and use it to initialize your game
 	// board. Write a function to do this for you.
@@ -89,6 +88,11 @@ int main(int argc, char *argv[]) {
 	free(bs);
 	return 0;
 }
+/*
+ A live cell with zero or one live neighbors dies from loneliness.
+ A live cell with four or more live neighbors dies due to overpopulation.
+ A dead cell with exactly three live neighbors becomes alive.
+ */
 
 /**
  * Initializes the board for the game.
