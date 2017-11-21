@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
  */
 void updateBoard(int *board, BoardSpecs *bs) {
 	int num_neighbors;
+	//int tmp_board[bs->num_rows][bs->num_cols];
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
 	for (int i = 0; i < bs->num_rows; i++) {
@@ -117,18 +118,26 @@ void updateBoard(int *board, BoardSpecs *bs) {
 			num_neighbors = numNeighbors(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
 				if (num_neighbors == 3) {
-					tmp_board[i] = 1;
+					tmp_board[to1d(i,j,bs)] = 1;
+				}
+				else {
+					tmp_board[to1d(i,j,bs)] = 0;
 				}
 			}
-			else if (board[to1d(i,j,bs)] == 1) {
-				if (!(num_neighbors <= 1 || num_neighbors >= 4)) {
-					tmp_board[i] = 1;
+			else /*if (board[to1d(i,j,bs)] == 1) */{
+				if ((num_neighbors <= 1 || num_neighbors >= 4)) {
+					tmp_board[to1d(i,j,bs)] = 0;
+				}
+				else {
+					tmp_board[to1d(i,j,bs)] = 1;
 				}
 			}
 		}
 	}
-	for (int i = 0; i < bs->size; i++) {
-		board[i] = tmp_board[i];
+	for (int i = 0; i < bs->num_rows; i++) {
+		for (int j = 0; j < bs->num_cols; j++) {
+			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
+		}
 	}
 	free(tmp_board);
 }
@@ -142,45 +151,31 @@ void updateBoard(int *board, BoardSpecs *bs) {
  * @return the cell's number of neighbors 
  */
 int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
-	int temp_row;
-	int temp_col;
 	int alive = 0;
 	// up left
-	temp_row = row - 1;
-	temp_col = col - 1;
-	alive += board[to1d(temp_row, temp_col, bs)];
+	alive += board[to1d(row-1, col-1, bs)];
 
 	// above
-	//temp_row = row - 1;
-	temp_col++;
-	alive += board[to1d(temp_row, temp_col, bs)];
+	alive += board[to1d(row-1, col, bs)];
 
 	// up right
-	//temp_row = row - 1;
-	temp_col++;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1; 
+	alive += board[to1d(row-1, col+1, bs)]; 
 
 	// right
-	temp_row++;
-	//temp_col = col + 1;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1;
+	alive += board[to1d(row, col+1, bs)];
 
 	// down right
-	temp_row++;
-	//temp_col = col + 1;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1;
+	alive += board[to1d(row+1, col+1, bs)];
+
 	// below
-	//temp_row = row + 1;
-	temp_col--;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1;
+	alive += board[to1d(row+1, col, bs)];
+
 	// down left
-	//temp_row = row + 1;
-	temp_col--;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1;
+	alive += board[to1d(row+1, col-1, bs)];
+
 	// left
-	temp_row++;
-	//temp_col--;
-	alive += board[to1d(temp_row, temp_col, bs)] == 1;
+	alive += board[to1d(row, col-1, bs)];
+
 	return alive;
 }
 
