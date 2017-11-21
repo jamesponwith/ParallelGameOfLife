@@ -152,30 +152,19 @@ void updateBoard(int *board, BoardSpecs *bs) {
  */
 int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
 	int alive = 0;
-	// up left
-	alive += board[to1d(row-1, col-1, bs)];
-
-	// above
-	alive += board[to1d(row-1, col, bs)];
-
-	// up right
-	alive += board[to1d(row-1, col+1, bs)]; 
-
-	// right
-	alive += board[to1d(row, col+1, bs)];
-
-	// down right
+	//top row
+	alive += board[to1d(row+1, col-1, bs)];
+	alive += board[to1d(row+1, col+0, bs)];
 	alive += board[to1d(row+1, col+1, bs)];
 
-	// below
-	alive += board[to1d(row+1, col, bs)];
-
-	// down left
-	alive += board[to1d(row+1, col-1, bs)];
-
-	// left
+	//left and right
 	alive += board[to1d(row, col-1, bs)];
+	alive += board[to1d(row, col+1, bs)];
 
+	//bottom row
+	alive += board[to1d(row-1, col-1, bs)];
+	alive += board[to1d(row-1, col+0, bs)];
+	alive += board[to1d(row-1, col+1, bs)]; 
 	return alive;
 }
 
@@ -188,8 +177,7 @@ int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
 int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 	FILE *fp = fopen(ascii_filename, "r");
 	int *board;
-	int col;
-	int row;
+	int col, row;
 
 	if ((fp) == NULL) {
 		printf("No such file\n");
@@ -247,28 +235,27 @@ void printBoardSpecs(BoardSpecs *bs) {
 void sim(int *board, BoardSpecs *bs) {
 	system("clear");
 	for (int i = 0; i < bs->num_its; i++) {
+		printf("Time step: %d\n\n", i);
 		printBoard(board, bs);
+		usleep(100000);
 		updateBoard(board, bs); 
-		usleep(100000);	
-		if (i == bs->num_its - 1) {
-			return;
-		}
+		if (i == bs->num_its - 1) {	return;	}
 		system("clear");
 	}
 }
 
 int to1d(int row, int col, BoardSpecs *bs) { 
 	if (row < 0) {
-		row = bs->num_rows + (-1 * row);
+		row = bs->num_rows + row;
 	}
-	else if (row == bs->num_rows) {
-		row = 0;
+	else if (row >= bs->num_rows) {
+		row = row % bs->num_rows;
 	}
 	if (col < 0) {
-		col = bs->num_cols + (-1 * col);
+		col = bs->num_cols + col;
 	}
-	else if (row == bs->num_cols) {
-		col = 0;
+	else if (col >= bs->num_cols) {
+		col = col % bs->num_cols;
 	}
 	return row*bs->num_cols+col; 
 }
