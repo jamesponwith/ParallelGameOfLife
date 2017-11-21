@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
 	board = initBoard(ascii_filename, bs);
 	struct timeval start_time, curr_time, result;
 
-	
 	ret = gettimeofday(&start_time, NULL); 	// get start time before starting game
 	sim(board, bs, verbose); 				// start game
 
@@ -107,7 +106,7 @@ void updateBoard(int *board, BoardSpecs *bs) {
 	// determine new state of board
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
-			//number of neighbors for the cell
+			//number of alive surrounding cells
 			num_alive = numAlive(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
 				if (num_alive == 3) {
@@ -138,12 +137,12 @@ void updateBoard(int *board, BoardSpecs *bs) {
 }
 
 /**
- * Gets the number of neighbors for a given cell 
+ * Gets the number of surrounding alive cells
  * @param *board The game board
  * @param *bs The board's specificaitons 
  * @param pos The position of the cell in the 1D array
  *
- * @return the cell's number of neighbors 
+ * @return the number of surrounding alive cells 
  */
 int numAlive(int *board, BoardSpecs *bs, int row, int col) {
 	int alive = 0;
@@ -208,11 +207,15 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
  */
 void printBoard(int *board, BoardSpecs *bs) {
 	for (int i = 0; i < bs->size; i++) {
-
-		if (board[i] == 0) { printf("."); }
-		else { printf("@"); }
-
-		if (((i + 1) % bs->num_cols) == 0) { printf("\n"); }
+		if (board[i] == 0) { 
+			printf("."); 
+		}
+		else { 
+			printf("@"); 
+		}
+		if (((i + 1) % bs->num_cols) == 0) { 
+			printf("\n"); 
+		}
 	}
 }
 
