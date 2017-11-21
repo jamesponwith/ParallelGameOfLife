@@ -120,7 +120,7 @@ void updateBoard(int *board, BoardSpecs *bs) {
 					tmp_board[i] = 1;
 				}
 			}
-			else if (board[i] == 1) {
+			else if (board[to1d(i,j,bs)] == 1) {
 				if (!(num_neighbors <= 1 || num_neighbors >= 4)) {
 					tmp_board[i] = 1;
 				}
@@ -148,55 +148,39 @@ int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
 	// up left
 	temp_row = row - 1;
 	temp_col = col - 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	alive += board[to1d(temp_row, temp_col, bs)];
 
 	// above
-	temp_row = row - 1;
-	temp_col = col;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	//temp_row = row - 1;
+	temp_col++;
+	alive += board[to1d(temp_row, temp_col, bs)];
 
 	// up right
-	temp_row = row - 1;
-	temp_col = col + 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	//temp_row = row - 1;
+	temp_col++;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1; 
 
 	// right
-	temp_row = row;
-	temp_col = col + 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	temp_row++;
+	//temp_col = col + 1;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1;
 
 	// down right
-	temp_row = row + 1;
-	temp_col = col + 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	temp_row++;
+	//temp_col = col + 1;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1;
 	// below
-	temp_row = row + 1;
-	temp_col = col;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	//temp_row = row + 1;
+	temp_col--;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1;
 	// down left
-	temp_row = row + 1;
-	temp_col = col - 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	//temp_row = row + 1;
+	temp_col--;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1;
 	// left
-	temp_row = row;
-	temp_col = col - 1;
-	if (board[to1d(temp_row, temp_col, bs)] == 1) {
-		alive++;
-	}
+	temp_row++;
+	//temp_col--;
+	alive += board[to1d(temp_row, temp_col, bs)] == 1;
 	return alive;
 }
 
@@ -280,13 +264,13 @@ void sim(int *board, BoardSpecs *bs) {
 
 int to1d(int row, int col, BoardSpecs *bs) { 
 	if (row < 0) {
-		row = bs->num_rows - 1;
+		row = bs->num_rows + (-1 * row);
 	}
 	else if (row == bs->num_rows) {
 		row = 0;
 	}
 	if (col < 0) {
-		col = bs->num_cols - 1;
+		col = bs->num_cols + (-1 * col);
 	}
 	else if (row == bs->num_cols) {
 		col = 0;
