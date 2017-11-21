@@ -1,10 +1,12 @@
 /**
  * File: gol.c
+ * Author: Patrick Hall
  *
- * Starter code for COMP280 Project 6 ("Game of Life")
+ * This program simulates Conway's game of life.
+ * The starting board specifications are passed through the command line
+ * argument.
+ * The program will run until 
  *
- * Replace this comment with your top-level comment with your name and a
- * description of this program.
  */
 
 #define _XOPEN_SOURCE 600
@@ -21,49 +23,44 @@ typedef struct {
 	int num_its;
 	int num_pairs;
 	int size;
-} BoardSpecs; struct timeval start_time;
-struct timeval curr_time;
-	
-int left = 0;
-
-// Forward function declarations
-int* initBoard(char *ascii_filename, BoardSpecs *b);
-int to1d(int row, int col, BoardSpecs *bs);
-
-int numNeighbors(int *board, BoardSpecs *bs, int row, int col); 
-
-void printBoardSpecs(BoardSpecs *b); 
-void printBoard(int *board, BoardSpecs *bs); 
-void updateBoard(int *board, BoardSpecs *bs); 
-void sim(int *board, BoardSpecs *bs); 
+} BoardSpecs; 
 
 void printError(); 
+void printBoardSpecs(BoardSpecs *b); 
+int to1d(int row, int col, BoardSpecs *bs);
+void printBoard(int *board, BoardSpecs *bs); 
+void updateBoard(int *board, BoardSpecs *bs); 
+void sim(int *board, BoardSpecs *bs, int verbose); 
+int* initBoard(char *ascii_filename, BoardSpecs *b);
+int numNeighbors(int *board, BoardSpecs *bs, int row, int col); 
+void timeval_subtract(struct timeval *result, 
+					struct timeval *end, struct timeval *start); 
+
 /**
  * Prints out a reminder of how to run the program.
  *
  * @param executable_name String containing the name of the executable
  */
 void usage(char *executable_name) {
-	printf("Usage: -c <%s> *rest of the args*", executable_name);
+	printf("Usage: -c <%s> -v <verbose mode>", executable_name);
 }
 
 int main(int argc, char *argv[]) {
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
 	char *ascii_filename = NULL;
 	int *board = NULL;
-	//int ret = 0;
-	//int verbose = 0;
+	int ret = 0;
+	int verbose = 0;
 
 	opterr = 0;
-	int c = -1;
-
-	while ((c = getopt(argc, argv, "c:")) != -1) {
+	int c = -1; 
+	while ((c = getopt(argc, argv, "c:v")) != -1) {
 		switch(c) {
 			case 'c':
 				ascii_filename = optarg;
 				break;
 			case 'v':
-				//verbose = 1;
+				verbose = 1;
 				break;
 			case 'l':
 				//advanced
@@ -76,31 +73,33 @@ int main(int argc, char *argv[]) {
 				exit(1);
 		}
    	}
+		
+	if (ascii_filename == NULL) {
+		printf("You must specify a filename\n");
+		exit(1);
+	}
 	
 	board = initBoard(ascii_filename, bs);
-	//printBoardSpecs(bs);
-	//printf("\n");
-	//printBoard(board, bs);
-	// Step 3: Start your timer
-	//ret = gettimeofday(&start_time, NULL);
-	//printf("\n%d\n", start_time);	
-	//printf("\n%d\n", curr_time);	
-	
 
-	// Step 4: Simulate for the required number of steps.
-	// Again, you should put this in its own function
-	
-	sim(board, bs);
-	
-	// Step 5: Stop your timer, calculate amount of time simulation ran for and
-	// then print that out.
-	//ret = gettimeofday(&curr_time, NULL);
-	//printf("%d", ret);
-	//printf("\n%d\n", left);
+	struct timeval start_time, curr_time, result;
+
+	ret = gettimeofday(&start_time, NULL);
+
+	sim(board, bs, verbose);
+
+	ret = gettimeofday(&curr_time, NULL);
+	ret++; // I was getting warnings if i did not use ret for aything
+
+	timeval_subtract(&result, &curr_time, &start_time);
+
+	printf("Total time for %d iterations of %dx%d world is ", 
+					bs->num_its, bs->num_cols, bs->num_rows);
+	printf("%ld.%06ld\n", result.tv_sec, result.tv_usec);	
 	free(board);
 	free(bs);
 	return 0;
 }
+
 /**
  * Updates the values in the board array
  * base off the rules of the game
@@ -110,11 +109,12 @@ int main(int argc, char *argv[]) {
  */
 void updateBoard(int *board, BoardSpecs *bs) {
 	int num_neighbors;
-	//int tmp_board[bs->num_rows][bs->num_cols];
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
+	// determine new state of board
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
+			//number of neighbors for the cell
 			num_neighbors = numNeighbors(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
 				if (num_neighbors == 3) {
@@ -124,7 +124,7 @@ void updateBoard(int *board, BoardSpecs *bs) {
 					tmp_board[to1d(i,j,bs)] = 0;
 				}
 			}
-			else /*if (board[to1d(i,j,bs)] == 1) */{
+			else {
 				if ((num_neighbors <= 1 || num_neighbors >= 4)) {
 					tmp_board[to1d(i,j,bs)] = 0;
 				}
@@ -134,6 +134,8 @@ void updateBoard(int *board, BoardSpecs *bs) {
 			}
 		}
 	}
+
+	// copy values of tmp_board to board
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
@@ -170,8 +172,10 @@ int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
 
 /**
  * Initializes the board for the game.
+ *
  * @param *fp The file object with board specifications
  * @param *bs The board struct with its specs
+ *
  * @return the 2d board array, in a 1d int pointer array
  */
 int* initBoard(char* ascii_filename, BoardSpecs *bs) {
@@ -205,20 +209,23 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 
 /**
  * Prints out the board
+ *
  * @param *board The game board
  * @param *bs The board's specs
  */
 void printBoard(int *board, BoardSpecs *bs) {
 	for (int i = 0; i < bs->size; i++) {
 
-		if (board[i] == 0) { printf(". "); }
-		else { printf("@ "); }
+		if (board[i] == 0) { printf("."); }
+		else { printf("@"); }
 
 		if (((i + 1) % bs->num_cols) == 0) { printf("\n"); }
 	}
 }
+
 /**
  * Prints out board specs
+ *
  * @param *bs the board's specs
  */
 void printBoardSpecs(BoardSpecs *bs) {
@@ -227,23 +234,38 @@ void printBoardSpecs(BoardSpecs *bs) {
 	printf("Num its:  %d\n", bs->num_its); 
 	printf("Pairs:    %d\n", bs->num_pairs);
 }
+
 /**
  * Simulates the game on terminal window
+ *
  * @param *board The game board
  * @param *bs The board's specificatoins
  */
-void sim(int *board, BoardSpecs *bs) {
-	system("clear");
-	for (int i = 0; i < bs->num_its; i++) {
-		printf("Time step: %d\n\n", i);
-		printBoard(board, bs);
-		usleep(100000);
-		updateBoard(board, bs); 
-		if (i == bs->num_its - 1) {	return;	}
+void sim(int *board, BoardSpecs *bs, int verbose) {
+	if (verbose == 1) {
 		system("clear");
+	}
+	for (int i = 0; i <= bs->num_its; i++) {
+		updateBoard(board, bs); 
+		if (verbose == 1) {
+			printf("Time step: %d\n\n", i);
+			printBoard(board, bs);
+			usleep(100000 * 2);
+			if (i == bs->num_its) {	return;	}
+			system("clear");
+		}
 	}
 }
 
+/**
+ * Converts 2d array coordinates to 1d array index
+ *
+ * @param row The row index
+ * @param col The col incex
+ * @param *bs The board specifications
+ *
+ * @return the 1d index of the board
+ */
 int to1d(int row, int col, BoardSpecs *bs) { 
 	if (row < 0) {
 		row = bs->num_rows + row;
@@ -258,4 +280,32 @@ int to1d(int row, int col, BoardSpecs *bs) {
 		col = col % bs->num_cols;
 	}
 	return row*bs->num_cols+col; 
+}
+
+/**
+ * Calculates the amount of time between start and end
+ * Taken from Dr Sat's starter code/GNU documentation
+ *
+ * @param *start The start time
+ * @param *end The end time
+ * @param *result The resulting time difference
+ */
+void timeval_subtract(struct timeval *result, 
+					struct timeval *end, struct timeval *start) 
+{
+	// Perform the carry for later subracting by updating start
+	if (end->tv_usec < start->tv_usec) {
+		int nsec = (start->tv_usec - end->tv_usec) / 1000000 + 1;
+		start->tv_usec -= 1000000 * nsec;
+		start->tv_sec += nsec;
+	}
+	if (end->tv_usec - start->tv_usec > 1000000) {
+		int nsec = (end->tv_usec - start->tv_usec) / 1000000;
+		start->tv_usec += 1000000 * nsec;
+		start->tv_sec -= nsec;
+	}
+
+	// Compute the time remaining to wait.tv_usec is certainly positive
+	result->tv_sec = end->tv_sec - start->tv_sec;
+	result->tv_usec = end->tv_usec - start->tv_usec;
 }
