@@ -5,8 +5,7 @@
  * This program simulates Conway's game of life.
  * The starting board specifications are passed through the command line
  * argument.
- * The program will run until 
- *
+ * The program will run until the specified number of iterations has passed 
  */
 
 #define _XOPEN_SOURCE 600
@@ -61,12 +60,6 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'v':
 				verbose = 1;
-				break;
-			case 'l':
-				//advanced
-				break;
-			case 'n':
-				//advanced
 				break;
 			default:
 				usage(argv[0]);
@@ -248,11 +241,12 @@ void sim(int *board, BoardSpecs *bs, int verbose) {
 	for (int i = 0; i <= bs->num_its; i++) {
 		updateBoard(board, bs); 
 		if (verbose == 1) {
-			printf("Time step: %d\n\n", i);
+			printf("Time step: %d\n", i);
 			printBoard(board, bs);
 			usleep(100000 * 2);
-			if (i == bs->num_its) {	return;	}
-			system("clear");
+			if (!(i == bs->num_its)) {
+				system("clear");
+			}
 		}
 	}
 }
