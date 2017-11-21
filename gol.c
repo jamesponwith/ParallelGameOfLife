@@ -31,7 +31,7 @@ void printBoard(int *board, BoardSpecs *bs);
 void updateBoard(int *board, BoardSpecs *bs); 
 void sim(int *board, BoardSpecs *bs, int verbose); 
 int* initBoard(char *ascii_filename, BoardSpecs *b);
-int numNeighbors(int *board, BoardSpecs *bs, int row, int col); 
+int numAlive(int *board, BoardSpecs *bs, int row, int col); 
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start); 
 
@@ -46,13 +46,14 @@ void usage(char *executable_name) {
 
 int main(int argc, char *argv[]) {
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
-	char *ascii_filename = NULL;
 	int *board = NULL;
 	int ret = 0;
 	int verbose = 0;
+	char *ascii_filename = NULL;
 
 	opterr = 0;
 	int c = -1; 
+
 	while ((c = getopt(argc, argv, "c:v")) != -1) {
 		switch(c) {
 			case 'c':
@@ -73,17 +74,16 @@ int main(int argc, char *argv[]) {
 	}
 	
 	board = initBoard(ascii_filename, bs);
-
 	struct timeval start_time, curr_time, result;
 
-	ret = gettimeofday(&start_time, NULL);
+	
+	ret = gettimeofday(&start_time, NULL); 	// get start time before starting game
+	sim(board, bs, verbose); 				// start game
 
-	sim(board, bs, verbose);
-
-	ret = gettimeofday(&curr_time, NULL);
+	ret = gettimeofday(&curr_time, NULL); 	// check time after game
 	ret++; // I was getting warnings if i did not use ret for aything
 
-	timeval_subtract(&result, &curr_time, &start_time);
+	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
 
 	printf("Total time for %d iterations of %dx%d world is ", 
 					bs->num_its, bs->num_cols, bs->num_rows);
@@ -101,16 +101,16 @@ int main(int argc, char *argv[]) {
  * @param *bs The board's specs
  */
 void updateBoard(int *board, BoardSpecs *bs) {
-	int num_neighbors;
+	int num_alive;
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
 	// determine new state of board
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			//number of neighbors for the cell
-			num_neighbors = numNeighbors(board, bs, i, j);	
+			num_alive = numAlive(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
-				if (num_neighbors == 3) {
+				if (num_alive == 3) {
 					tmp_board[to1d(i,j,bs)] = 1;
 				}
 				else {
@@ -118,7 +118,7 @@ void updateBoard(int *board, BoardSpecs *bs) {
 				}
 			}
 			else {
-				if ((num_neighbors <= 1 || num_neighbors >= 4)) {
+				if ((num_alive <= 1 || num_alive >= 4)) {
 					tmp_board[to1d(i,j,bs)] = 0;
 				}
 				else {
@@ -145,7 +145,7 @@ void updateBoard(int *board, BoardSpecs *bs) {
  *
  * @return the cell's number of neighbors 
  */
-int numNeighbors(int *board, BoardSpecs *bs, int row, int col) {
+int numAlive(int *board, BoardSpecs *bs, int row, int col) {
 	int alive = 0;
 	//top row
 	alive += board[to1d(row+1, col-1, bs)];
