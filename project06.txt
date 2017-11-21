@@ -1,13 +1,15 @@
 COMP 280 - Project 06 (Game of Life)
 
-1. Author:
-	- Name: 
-	- Email: 
+1. Author:		Patrick Hall
 
-2. Total Hours Spent on Project:
+2. Total Hours Spent on Project: 
+	20
 
 3. Did you attempt the advanced component?
+	No
 
 4. Project Bucks Used:
+	None yet
 
 5. (Optional) Additional Comments:
+	I may try the advanced component tomorrow, using a project buck
