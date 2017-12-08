@@ -103,8 +103,8 @@ void updateBoard(int *board, BoardSpecs *bs) {
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
 	// determine new state of board
-	for (int i = 0; i < bs->num_rows; i++) {
-		for (int j = 0; j < bs->num_cols; j++) {
+	for (unsigned i = 0; i < bs->num_rows; i++) {
+		for (unsigned j = 0; j < bs->num_cols; j++) {
 			//number of alive surrounding cells
 			num_alive = numAlive(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
@@ -171,8 +171,6 @@ int numAlive(int *board, BoardSpecs *bs, int row, int col) {
  */
 int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 	FILE *fp = fopen(ascii_filename, "r");
-	//int *board;
-
 	if ((fp) == NULL) {
 		printf("No such file\n");
 		exit(1);
@@ -188,7 +186,7 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 
 	// spots for initial state
 	int col, row;
-	for (int i= 0; i < bs->num_pairs; i++) {
+	for (unsigned i = 0; i < bs->num_pairs; i++) {
 		fscanf(fp, "%d %d", &col, &row); 
 		int index = to1d(row, col, bs);
 		board[index] = 1;
