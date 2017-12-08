@@ -41,13 +41,10 @@ void timeval_subtract(struct timeval *result,
  * @param executable_name String containing the name of the executable
  */
 void usage(char *executable_name) {
-	printf("Usage: -c <%s> -v <verbose mode>", executable_name);
+	printf("Usage: -c <%s> -v <verbose mode>\n", executable_name);
 }
 
 int main(int argc, char *argv[]) {
-	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
-	int *board = NULL;
-	int ret = 0;
 	int verbose = 0;
 	char *ascii_filename = NULL;
 
@@ -58,6 +55,10 @@ int main(int argc, char *argv[]) {
 		switch(c) {
 			case 'c':
 				ascii_filename = optarg;
+				if (ascii_filename == NULL) {
+					printf("You must specify a filename\n");
+					exit(1);
+				}
 				break;
 			case 'v':
 				verbose = 1;
@@ -67,26 +68,24 @@ int main(int argc, char *argv[]) {
 				exit(1);
 		}
    	}
-		
-	if (ascii_filename == NULL) {
-		printf("You must specify a filename\n");
-		exit(1);
-	}
-	
-	board = initBoard(ascii_filename, bs);
+	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
+
+	int *board = initBoard(ascii_filename, bs);
+
 	struct timeval start_time, curr_time, result;
 
-	ret = gettimeofday(&start_time, NULL); 	// get start time before starting game
+	gettimeofday(&start_time, NULL); 	// get start time before starting game
+
 	sim(board, bs, verbose); 				// start game
 
-	ret = gettimeofday(&curr_time, NULL); 	// check time after game
-	ret++; // I was getting warnings if i did not use ret for aything
+	gettimeofday(&curr_time, NULL); 	// check time after game
 
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
 
 	printf("Total time for %d iterations of %dx%d world is ", 
 					bs->num_its, bs->num_cols, bs->num_rows);
 	printf("%ld.%06ld\n", result.tv_sec, result.tv_usec);	
+
 	free(board);
 	free(bs);
 	return 0;
