@@ -171,8 +171,7 @@ int numAlive(int *board, BoardSpecs *bs, int row, int col) {
  */
 int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 	FILE *fp = fopen(ascii_filename, "r");
-	int *board;
-	int col, row;
+	//int *board;
 
 	if ((fp) == NULL) {
 		printf("No such file\n");
@@ -185,9 +184,10 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 	fscanf(fp, "%d", &bs->num_pairs);
 	bs->size = bs->num_cols * bs->num_rows;
 
-	board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int));
+	int *board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int));
 
 	// spots for initial state
+	int col, row;
 	for (int i= 0; i < bs->num_pairs; i++) {
 		fscanf(fp, "%d %d", &col, &row); 
 		int index = to1d(row, col, bs);
