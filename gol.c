@@ -46,10 +46,11 @@ void usage(char *executable_name) {
 
 int main(int argc, char *argv[]) {
 	int verbose = 0;
-	char *ascii_filename = NULL;
+	int c = -1; 
+	int num_threads = 4;
 
 	opterr = 0;
-	int c = -1; 
+	char *ascii_filename = NULL;
 
 	while ((c = getopt(argc, argv, "c:v")) != -1) {
 		switch(c) {
@@ -63,23 +64,30 @@ int main(int argc, char *argv[]) {
 			case 'v':
 				verbose = 1;
 				break;
+			case 't':
+				num_threads = (int) strtol(optarg, NULL , 10);
+				break;
+			case 'p':
+
 			default:
 				usage(argv[0]);
 				exit(1);
 		}
    	}
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
-
 	int *board = initBoard(ascii_filename, bs);
 
 	struct timeval start_time, curr_time, result;
-
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
+	//TODO: spawn off worker threads
+	//		play multiple rounds of gol
+	//		each thread computes just its portion of cells for the game
+	//		workers are spawned only once
+	//		if printing enabled, designate one thread to pring
 	sim(board, bs, verbose); 				// start game
 
 	gettimeofday(&curr_time, NULL); 	// check time after game
-
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
 
 	printf("Total time for %d iterations of %dx%d world is ", 
