@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
 	int verbose = 0;
 	int c = -1; 
 	int num_threads = 4;
+	num_threads++; //to get rid of the fkin warning
 
 	opterr = 0;
 	char *ascii_filename = NULL;
@@ -111,8 +112,8 @@ void updateBoard(int *board, BoardSpecs *bs) {
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
 	// determine new state of board
-	for (unsigned i = 0; i < bs->num_rows; i++) {
-		for (unsigned j = 0; j < bs->num_cols; j++) {
+	for (int i = 0; i < bs->num_rows; i++) {
+		for (int j = 0; j < bs->num_cols; j++) {
 			//number of alive surrounding cells
 			num_alive = numAlive(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
@@ -194,7 +195,7 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 
 	// spots for initial state
 	int col, row;
-	for (unsigned i = 0; i < bs->num_pairs; i++) {
+	for (int i = 0; i < bs->num_pairs; i++) {
 		fscanf(fp, "%d %d", &col, &row); 
 		int index = to1d(row, col, bs);
 		board[index] = 1;
