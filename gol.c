@@ -37,7 +37,6 @@ void timeval_subtract(struct timeval *result,
 
 /**
  * Prints out a reminder of how to run the program.
- *
  * @param executable_name String containing the name of the executable
  */
 void usage(char *executable_name) {
