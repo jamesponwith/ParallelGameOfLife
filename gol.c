@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <string.h>
+#include <pthread.h>
 
 typedef struct {
 	int num_rows;
@@ -34,6 +35,7 @@ int* initBoard(char *ascii_filename, BoardSpecs *b);
 int numAlive(int *board, BoardSpecs *bs, int row, int col); 
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start); 
+void* threadFn(void *id_p);
 
 /**
  * Prints out a reminder of how to run the program.
@@ -80,6 +82,34 @@ int main(int argc, char *argv[]) {
 	struct timeval start_time, curr_time, result;
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
+	/*********************************/
+	// Create threads and barrier, THREAD_COUNT will the 
+	// input for number of threads
+
+	pthread_barrier_t barrier;
+	pthread_t id_t[THREAD_COUNT];
+	int short_ids[THREAD_COUNT];
+	
+	srand(time(NULL));
+	pthread_barrier_init(&barrier, NULL, THREAD_COUNT++);
+	
+	int i;
+	for(i = 0; i <THREAD_COUNT; i++) {
+		short_ids[i] = i;
+		pthread_create(&id_t[i], NULL, threadFn, &short_ids[i]);
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	/*
+	int j;
+	for(j = 0; j < THREAD_COUNT; j++) {
+		pthread_join(id_t[j], NULL);
+	}
+
+	pthread_barrier_destroy(&barrier);
+	*/
+	
 	//TODO: spawn off worker threads
 	//		play multiple rounds of gol
 	//		each thread computes just its portion of cells for the game
@@ -310,4 +340,14 @@ void timeval_subtract(struct timeval *result,
 	// Compute the time remaining to wait.tv_usec is certainly positive
 	result->tv_sec = end->tv_sec - start->tv_sec;
 	result->tv_usec = end->tv_usec - start->tv_usec;
+}
+
+void *threadFn(void *id_p) {
+	int thread_id = *(int *)id_p;
+	int wait_sec = 1 *rand() % 5;
+	printf("thread %d: Wait %d seconds \n", thread_id, wait_sec);
+	sleep(wait_sec);
+	printf("thread %d: going!\n", thread_id);
+
+	return NULL;
 }
