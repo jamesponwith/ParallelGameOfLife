@@ -25,18 +25,29 @@ typedef struct {
 	int size;
 } BoardSpecs; 
 
+typedef struct {
+	BoardSpecs *bs;
+	int *board;
+	int verbose;
+	int mytid;
+	int start_index;
+	int end_index;
+} WorkerArgs;
+
+void *Malloc(size_t size);
 void printError(); 
 void printBoardSpecs(BoardSpecs *b); 
 int to1d(int row, int col, BoardSpecs *bs);
 void printBoard(int *board, BoardSpecs *bs); 
 void updateBoard(int *board, BoardSpecs *bs); 
-void sim(int *board, BoardSpecs *bs, int verbose); 
+//void *sim(int *board, BoardSpecs *bs, int verbose); 
+void *sim(void* args); //TODO: how to proprly pass struct to void*args
 int* initBoard(char *ascii_filename, BoardSpecs *b);
 int numAlive(int *board, BoardSpecs *bs, int row, int col); 
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start); 
-void* threadFn(void *id_p);
 
+void Filename(char *ascii_filename, char optarg);
 /**
  * Prints out a reminder of how to run the program.
  * @param executable_name String containing the name of the executable
@@ -46,15 +57,14 @@ void usage(char *executable_name) {
 }
 
 int main(int argc, char *argv[]) {
+	char *ascii_filename = NULL;
+	int num_threads = 4;
 	int verbose = 0;
 	int c = -1; 
-	int num_threads = 4;
 	num_threads++; //to get rid of the fkin warning
 
 	opterr = 0;
-	char *ascii_filename = NULL;
-
-	while ((c = getopt(argc, argv, "c:v")) != -1) {
+	while ((c = getopt(argc, argv, "c:vt:p")) != -1) {
 		switch(c) {
 			case 'c':
 				ascii_filename = optarg;
@@ -67,55 +77,47 @@ int main(int argc, char *argv[]) {
 				verbose = 1;
 				break;
 			case 't':
-				num_threads = (int) strtol(optarg, NULL , 10);
+				num_threads = strtol(optarg, NULL , 10);
 				break;
 			case 'p':
-
+				//TODO:print out per thread board allocation
+				break;
 			default:
 				usage(argv[0]);
 				exit(1);
 		}
    	}
+
+	//TODO: spawn off worker threads
+	pthread_t *tids = Malloc(sizeof(pthread_t)*num_threads);
+	WorkerArgs *thread_args = Malloc(sizeof(WorkerArgs)*num_threads);
+
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
 	int *board = initBoard(ascii_filename, bs);
+
+	pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_barrier_t my_barrier;
+
+	if (pthread_barrier_init(&my_barrier, 0, num_threads)) {
+		printf("pthread_barrier_init error\n");
+		exit(1);
+	}
 
 	struct timeval start_time, curr_time, result;
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
-	/*********************************/
-	// Create threads and barrier, THREAD_COUNT will the 
-	// input for number of threads
-
-	pthread_barrier_t barrier;
-	pthread_t id_t[THREAD_COUNT];
-	int short_ids[THREAD_COUNT];
-	
-	srand(time(NULL));
-	pthread_barrier_init(&barrier, NULL, THREAD_COUNT++);
-	
-	int i;
-	for(i = 0; i <THREAD_COUNT; i++) {
-		short_ids[i] = i;
-		pthread_create(&id_t[i], NULL, threadFn, &short_ids[i]);
+	for (int i = 0; i < num_threads; i++) {
+		thread_args[i].bs = bs;
+		thread_args[i].mytid = i;
+		thread_args[i].board = board;
+		pthread_create(&tids[i], NULL, sim, (void*)&thread_args[i]);
 	}
 
-	pthread_barrier_wait(&barrier);
-
-	/*
-	int j;
-	for(j = 0; j < THREAD_COUNT; j++) {
-		pthread_join(id_t[j], NULL);
-	}
-
-	pthread_barrier_destroy(&barrier);
-	*/
-	
-	//TODO: spawn off worker threads
 	//		play multiple rounds of gol
 	//		each thread computes just its portion of cells for the game
 	//		workers are spawned only once
 	//		if printing enabled, designate one thread to pring
-	sim(board, bs, verbose); 				// start game
+	//sim(board, bs, verbose); 				// start game
 
 	gettimeofday(&curr_time, NULL); 	// check time after game
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
@@ -130,17 +132,50 @@ int main(int argc, char *argv[]) {
 }
 
 /**
+ * Simulates the game on terminal window
+ * @param board The game board
+ * @param bs The board's specificatoins
+ */
+
+void *sim(void *args) {
+//void *sim(int *board, BoardSpecs *bs, int verbose) {
+	WorkerArgs *w_args = args;	
+	if (w_args->verbose == 1) {
+		system("clear");
+	}
+	// semwait
+	for (int i = 0; i <= w_args[i].bs->num_its; i++) {
+
+		updateBoard(w_args->board, w_args->bs); //start index, end index, num threads 
+		if (w_args->verbose == 1) {
+			// && thread id = 0;
+			printf("Time step: %d\n", i);
+			// only one thread prints
+			printBoard(w_args->board, w_args->bs);
+			usleep(100000 * 2);
+			if (!(i == w_args->bs->num_its)) {
+				system("clear");
+			}
+		}
+		// synch 
+		// sempost
+	}
+}
+
+/**
  * Updates the values in the board array
  * base off the rules of the game
- *
- * @param *board The board
- * @param *bs The board's specs
+ * @param board The board
+ * @param bs The board's specs
  */
 void updateBoard(int *board, BoardSpecs *bs) {
 	int num_alive;
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
 	// determine new state of board
+	// int t = thread start index/ = board size / num_threads * threadid
+	// loop for board size / num threads
+	//
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			//number of alive surrounding cells
@@ -173,12 +208,12 @@ void updateBoard(int *board, BoardSpecs *bs) {
 	free(tmp_board);
 }
 
+
 /**
  * Gets the number of surrounding alive cells
- * @param *board The game board
- * @param *bs The board's specificaitons 
+ * @param board The game board
+ * @param bs The board's specificaitons 
  * @param pos The position of the cell in the 1D array
- *
  * @return the number of surrounding alive cells 
  */
 int numAlive(int *board, BoardSpecs *bs, int row, int col) {
@@ -201,10 +236,8 @@ int numAlive(int *board, BoardSpecs *bs, int row, int col) {
 
 /**
  * Initializes the board for the game.
- *
- * @param *fp The file object with board specifications
- * @param *bs The board struct with its specs
- *
+ * @param fp The file object with board specifications
+ * @param bs The board struct with its specs
  * @return the 2d board array, in a 1d int pointer array
  */
 int* initBoard(char* ascii_filename, BoardSpecs *bs) {
@@ -236,9 +269,8 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 
 /**
  * Prints out the board
- *
- * @param *board The game board
- * @param *bs The board's specs
+ * @param board The game board
+ * @param bs The board's specs
  */
 void printBoard(int *board, BoardSpecs *bs) {
 	for (int i = 0; i < bs->size; i++) {
@@ -256,8 +288,7 @@ void printBoard(int *board, BoardSpecs *bs) {
 
 /**
  * Prints out board specs
- *
- * @param *bs the board's specs
+ * @param bs the board's specs
  */
 void printBoardSpecs(BoardSpecs *bs) {
 	printf("Num rows: %d\n", bs->num_rows); 
@@ -266,36 +297,12 @@ void printBoardSpecs(BoardSpecs *bs) {
 	printf("Pairs:    %d\n", bs->num_pairs);
 }
 
-/**
- * Simulates the game on terminal window
- *
- * @param *board The game board
- * @param *bs The board's specificatoins
- */
-void sim(int *board, BoardSpecs *bs, int verbose) {
-	if (verbose == 1) {
-		system("clear");
-	}
-	for (int i = 0; i <= bs->num_its; i++) {
-		updateBoard(board, bs); 
-		if (verbose == 1) {
-			printf("Time step: %d\n", i);
-			printBoard(board, bs);
-			usleep(100000 * 2);
-			if (!(i == bs->num_its)) {
-				system("clear");
-			}
-		}
-	}
-}
 
 /**
  * Converts 2d array coordinates to 1d array index
- *
  * @param row The row index
  * @param col The col incex
- * @param *bs The board specifications
- *
+ * @param bs The board specifications
  * @return the 1d index of the board
  */
 int to1d(int row, int col, BoardSpecs *bs) { 
@@ -318,9 +325,9 @@ int to1d(int row, int col, BoardSpecs *bs) {
  * Calculates the amount of time between start and end
  * Taken from Dr Sat's starter code/GNU documentation
  *
- * @param *start The start time
- * @param *end The end time
- * @param *result The resulting time difference
+ * @param start The start time
+ * @param end The end time
+ * @param result The resulting time difference
  */
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start) 
@@ -342,12 +349,12 @@ void timeval_subtract(struct timeval *result,
 	result->tv_usec = end->tv_usec - start->tv_usec;
 }
 
-void *threadFn(void *id_p) {
-	int thread_id = *(int *)id_p;
-	int wait_sec = 1 *rand() % 5;
-	printf("thread %d: Wait %d seconds \n", thread_id, wait_sec);
-	sleep(wait_sec);
-	printf("thread %d: going!\n", thread_id);
-
-	return NULL;
+//wrapper for malloc calling perror and exit on error
+void *Malloc(size_t size) {
+	void *ret = malloc(size);
+	if (!ret) {
+		perror("malloc array");
+		exit(1);
+	}
+	return ret;
 }
