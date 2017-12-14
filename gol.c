@@ -47,6 +47,7 @@ int* initBoard(char *ascii_filename, BoardSpecs *b);
 int numAlive(int *board, BoardSpecs *bs, int row, int col); 
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start); 
+void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows);
 
 void Filename(char *ascii_filename, char optarg);
 /**
@@ -62,7 +63,8 @@ int main(int argc, char *argv[]) {
 	int num_threads = 4;
 	int verbose = 0;
 	int c = -1; 
-
+	int p = 0;
+		
 	opterr = 0;
 	while ((c = getopt(argc, argv, "c:vt:p")) != -1) {
 		switch(c) {
@@ -80,13 +82,13 @@ int main(int argc, char *argv[]) {
 				num_threads = strtol(optarg, NULL , 10);
 				break;
 			case 'p':
-				//TODO:print out per thread board allocation
+				p = 1;	
 				break;
 			default:
 				usage(argv[0]);
 				exit(1);
 		}
-   	}
+	}
 
 	pthread_t *tids = malloc(num_threads *sizeof(pthread_t));
 	WorkerArgs *thread_args = malloc(num_threads *sizeof(WorkerArgs));
@@ -133,6 +135,10 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&curr_time, NULL); 	// check time after game
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
+	
+	if(p == 1) {
+		printThreadStats(thread_args, num_threads, bs->num_rows);
+	}
 
 	printf("Total time for %d iterations of %dx%d world is ", 
 					bs->num_its, bs->num_cols, bs->num_rows);
@@ -143,6 +149,18 @@ int main(int argc, char *argv[]) {
 	free(board);
 	free(bs);
 	return 0;
+}
+
+void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
+
+	int i;
+	for(i = 0; i < num_threads; i++) {
+		int start_row = w_args[i].start / num_rows;
+		int end_row = w_args[i].end / num_rows;
+
+		fprintf(stdout, "tid %d: rows: %d:%d (%d)\n", w_args[i].mytid, start_row, end_row, ((start_row - end_row) + 1));
+		fflush(stdout);
+	}
 }
 
 /**
@@ -214,8 +232,6 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier
 		}
 	}
 	pthread_barrier_wait(pbt);
-	printf("after waiting\n");
-	//board = tmp_board;
 	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
