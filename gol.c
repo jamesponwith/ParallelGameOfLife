@@ -32,6 +32,7 @@ typedef struct {
 	int mytid;
 	int start;
 	int end;
+	pthread_barrier_t my_barrier;
 } WorkerArgs;
 
 void *Malloc(size_t size);
@@ -39,7 +40,7 @@ void printError();
 void printBoardSpecs(BoardSpecs *b); 
 int to1d(int row, int col, BoardSpecs *bs);
 void printBoard(int *board, BoardSpecs *bs); 
-void updateBoard(int *board, BoardSpecs *bs, int start, int end); 
+void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier_t pbt); 
 //void *sim(int *board, BoardSpecs *bs, int verbose); 
 void *sim(void* args); //TODO: how to proprly pass struct to void*args
 int* initBoard(char *ascii_filename, BoardSpecs *b);
@@ -95,7 +96,7 @@ int main(int argc, char *argv[]) {
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
 	int *board = initBoard(ascii_filename, bs);
 
-	pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
+	//pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
 	pthread_barrier_t my_barrier;
 
 	if (pthread_barrier_init(&my_barrier, 0, num_threads)) {
@@ -107,6 +108,7 @@ int main(int argc, char *argv[]) {
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
 	for (int i = 0; i < num_threads; i++) {
+		thread_args[i].verbose = verbose;
 		thread_args[i].bs = bs;
 		thread_args[i].mytid = i;
 		thread_args[i].board = board;
@@ -126,6 +128,7 @@ int main(int argc, char *argv[]) {
 			thread_args[i].end = thread_args[i].start + d * bs->num_cols;
 		}
 
+		thread_args[i].my_barrier = my_barrier;
 		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
 	}
 
@@ -152,27 +155,35 @@ int main(int argc, char *argv[]) {
  * @param board The game board
  * @param bs The board's specificatoins
  */
-
 void *sim(void *args) {
 	WorkerArgs *w_args = (WorkerArgs*)args;	
-	if (w_args->verbose == 1) {
-		system("clear");
+	if (w_args->mytid == 0) {
+		if (w_args->verbose == 1) {
+	//		system("clear");
+		}
 	}
 	// semwait
 	for (int i = 0; i <= w_args[i].bs->num_its; i++) {
-		updateBoard(w_args->board, w_args->bs, w_args->start, w_args->end); //start index, end index, num threads 
-		if (w_args->verbose == 1) {
-			// && thread id = 0;
-			printf("Time step: %d\n", i);
-			// only one thread prints
-			printBoard(w_args->board, w_args->bs);
-			usleep(100000 * 2);
-			if (!(i == w_args->bs->num_its)) {
-				system("clear");
+
+		updateBoard(w_args->board, w_args->bs, w_args->start, w_args->end, w_args->my_barrier); //start index, end index, num threads 
+		printf("after update board");
+		printf("tid: %d", w_args->mytid);	
+		// If thread id == 0;
+		if (w_args->mytid == 0) {
+			if (w_args->verbose == 1) {
+				printf("\nVerbose mode\n");
+				// && thread id = 0;
+				printf("Time step: %d\n", i);
+				// only one thread prints
+				printBoard(w_args->board, w_args->bs);
+				usleep(100000 * 2);
+				if (!(i == w_args->bs->num_its)) {
+					system("clear");
+				}
 			}
 		}
-		// synch 
-		// sempost
+			// synch 
+			// sempost
 	}
 	return NULL;
 }
@@ -183,7 +194,7 @@ void *sim(void *args) {
  * @param board The board
  * @param bs The board's specs
  */
-void updateBoard(int *board, BoardSpecs *bs, int start, int end) {
+void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier_t pbt) {
 	int num_alive;
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
 
@@ -216,8 +227,10 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end) {
 			}
 		}
 	}
-	//stop
-	for (int i = 0; i < bs->num_rows; i++) {
+	printf("before wait\n");
+	pthread_barrier_wait(&pbt);
+	printf("after waiting");
+	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
 		}
