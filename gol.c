@@ -156,9 +156,9 @@ void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
 	int i;
 	for(i = 0; i < num_threads; i++) {
 		int start_row = w_args[i].start / num_rows;
-		int end_row = w_args[i].end / num_rows;
+		int end_row = (w_args[i].end / num_rows) - 1;
 
-		fprintf(stdout, "tid %d: rows: %d:%d (%d)\n", w_args[i].mytid, start_row, end_row, ((start_row - end_row) + 1));
+		fprintf(stdout, "tid %d: rows: %d:%d (%d)\n", w_args[i].mytid, start_row, end_row, (end_row - start_row));
 		fflush(stdout);
 	}
 }
