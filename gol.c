@@ -110,8 +110,22 @@ int main(int argc, char *argv[]) {
 		thread_args[i].bs = bs;
 		thread_args[i].mytid = i;
 		thread_args[i].board = board;
-		thread_args[i].start = bs->size / num_threads * i;
-		thread_args[i].end = thread_args[i].start + bs->size / num_threads;
+		if (i == 0) {
+			thread_args[i].start = 0;
+		}
+		else {
+			thread_args[i].start = thread_args[i - 1].end + 1;
+		}
+
+		int d = bs->num_rows / num_threads;
+		int r = bs->num_rows % num_threads;
+		if (i < r) {
+			thread_args[i].end = thread_args[i].start + (d + 1) * bs->num_cols;
+		}
+		else {
+			thread_args[i].end = thread_args[i].start + d * bs->num_cols;
+		}
+
 		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
 	}
 
@@ -160,6 +174,7 @@ void *sim(void *args) {
 		// synch 
 		// sempost
 	}
+	return NULL;
 }
 
 /**
@@ -174,14 +189,12 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end) {
 
 	int start_r = start / bs->num_rows;
 	int end_r = end / bs->num_rows;
-	int start_c = start % bs->num_rows;
-	int end_c = end % bs->num_rows;
 
 	// determine new state of board
 	// int t = thread start index/ = board size / num_threads * threadid
 	// loop for board size / num threads
 	//
-	for (int i = 0; i < bs->num_rows; i++) {
+	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			//number of alive surrounding cells
 			num_alive = numAlive(board, bs, i, j);	
@@ -203,8 +216,7 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end) {
 			}
 		}
 	}
-
-	// copy values of tmp_board to board
+	//stop
 	for (int i = 0; i < bs->num_rows; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
