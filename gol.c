@@ -88,16 +88,15 @@ int main(int argc, char *argv[]) {
 		}
    	}
 
-	pthread_t *tids = malloc(sizeof(pthread_t)*num_threads);
-	WorkerArgs *thread_args = malloc(sizeof(WorkerArgs)*num_threads);
+	pthread_t *tids = malloc(num_threads *sizeof(pthread_t));
+	WorkerArgs *thread_args = malloc(num_threads *sizeof(WorkerArgs));
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
-
 
 	int *board = initBoard(ascii_filename, bs);
 
 	pthread_barrier_t my_barrier;
-	if (pthread_barrier_init(&my_barrier, 0, num_threads)) {
-		printf("pthread_barrier_init error\n");
+	if (pthread_barrier_init(&my_barrier, NULL, num_threads) != 0) {
+		perror("pthread_barrier_init error\n");
 		exit(1);
 	}
 
@@ -105,6 +104,7 @@ int main(int argc, char *argv[]) {
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
 	for (int i = 0; i < num_threads; i++) {
+		thread_args[i].my_barrier = &my_barrier;
 		thread_args[i].verbose = verbose;
 		thread_args[i].bs = bs;
 		thread_args[i].mytid = i;
@@ -131,7 +131,6 @@ int main(int argc, char *argv[]) {
 		pthread_join(tids[i], NULL);
 	}
 
-
 	gettimeofday(&curr_time, NULL); 	// check time after game
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
 
@@ -157,10 +156,12 @@ void *sim(void *args) {
 	if (w_args->mytid == 0) {
 		if (w_args->verbose == 1) {
 			printf("\nVerbose mode\n");
-			//system("clear");
+			system("clear");
 		}
 	}
-	for (int i = 0; i < w_args[w_args->mytid].bs->num_its; i++) {
+	int its = w_args->bs->num_its;
+	for (int i = 0; i < its; i++) {
+		//pthread_barrier_wait(w_args->my_barrier);
 		updateBoard(w_args->board, w_args->bs, w_args->start, w_args->end, w_args->my_barrier); 
 		if (w_args->mytid == 0) {
 			if (w_args->verbose == 1) {
@@ -172,6 +173,7 @@ void *sim(void *args) {
 				}
 			}
 		}
+		pthread_barrier_wait(w_args->my_barrier);
 	}
 	return NULL;
 }
@@ -213,11 +215,13 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier
 	}
 	pthread_barrier_wait(pbt);
 	printf("after waiting\n");
+	//board = tmp_board;
 	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
 		}
 	}
+	pthread_barrier_wait(pbt);
 	free(tmp_board);
 }
 
