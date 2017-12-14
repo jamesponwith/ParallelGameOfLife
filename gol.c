@@ -129,9 +129,11 @@ int main(int argc, char *argv[]) {
 		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
 	}
 
-	for (int i = 1; i < num_threads; i++) {
+	for (int i = 0; i < num_threads; i++) {
 		pthread_join(tids[i], NULL);
 	}
+	
+	pthread_barrier_destroy(&my_barrier);
 
 	gettimeofday(&curr_time, NULL); 	// check time after game
 	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
