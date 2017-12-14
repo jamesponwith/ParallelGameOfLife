@@ -30,8 +30,8 @@ typedef struct {
 	int *board;
 	int verbose;
 	int mytid;
-	int start_index;
-	int end_index;
+	int start;
+	int end;
 } WorkerArgs;
 
 void *Malloc(size_t size);
@@ -39,7 +39,7 @@ void printError();
 void printBoardSpecs(BoardSpecs *b); 
 int to1d(int row, int col, BoardSpecs *bs);
 void printBoard(int *board, BoardSpecs *bs); 
-void updateBoard(int *board, BoardSpecs *bs); 
+void updateBoard(int *board, BoardSpecs *bs, int start, int end); 
 //void *sim(int *board, BoardSpecs *bs, int verbose); 
 void *sim(void* args); //TODO: how to proprly pass struct to void*args
 int* initBoard(char *ascii_filename, BoardSpecs *b);
@@ -110,7 +110,9 @@ int main(int argc, char *argv[]) {
 		thread_args[i].bs = bs;
 		thread_args[i].mytid = i;
 		thread_args[i].board = board;
-		pthread_create(&tids[i], NULL, sim, (void*)&thread_args[i]);
+		thread_args[i].start = bs->size / num_threads * i;
+		thread_args[i].end = thread_args[i].start + bs->size / num_threads;
+		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
 	}
 
 	//		play multiple rounds of gol
@@ -138,15 +140,13 @@ int main(int argc, char *argv[]) {
  */
 
 void *sim(void *args) {
-//void *sim(int *board, BoardSpecs *bs, int verbose) {
-	WorkerArgs *w_args = args;	
+	WorkerArgs *w_args = (WorkerArgs*)args;	
 	if (w_args->verbose == 1) {
 		system("clear");
 	}
 	// semwait
 	for (int i = 0; i <= w_args[i].bs->num_its; i++) {
-
-		updateBoard(w_args->board, w_args->bs); //start index, end index, num threads 
+		updateBoard(w_args->board, w_args->bs, w_args->start, w_args->end); //start index, end index, num threads 
 		if (w_args->verbose == 1) {
 			// && thread id = 0;
 			printf("Time step: %d\n", i);
@@ -168,9 +168,14 @@ void *sim(void *args) {
  * @param board The board
  * @param bs The board's specs
  */
-void updateBoard(int *board, BoardSpecs *bs) {
+void updateBoard(int *board, BoardSpecs *bs, int start, int end) {
 	int num_alive;
 	int *tmp_board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int)); 
+
+	int start_r = start / bs->num_rows;
+	int end_r = end / bs->num_rows;
+	int start_c = start % bs->num_rows;
+	int end_c = end % bs->num_rows;
 
 	// determine new state of board
 	// int t = thread start index/ = board size / num_threads * threadid
