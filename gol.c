@@ -1,8 +1,9 @@
 /**
  * File: gol.c
- * Author: Patrick Hall
- *
- * This program simulates Conway's game of life.
+ * Author: Patrick Hall 
+ *		   James Ponwith
+ * This program simulates Conway's game of life with multiple threads.
+ * The number of threads is specified by the -t argument; it is 4 by default
  * The starting board specifications are passed through the command line
  * argument.
  * The program will run until the specified number of iterations has passed 
