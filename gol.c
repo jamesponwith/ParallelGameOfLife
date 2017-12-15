@@ -178,7 +178,8 @@ void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
 	for(int i = 0; i < num_threads; i++) {
 		int start_row = w_args[i].start / num_rows;
 		int end_row = (w_args[i].end / num_rows) - 1;
-		fprintf(stdout, "tid %d:\trows:\t %d:%d\t(%d)\n", w_args[i].mytid, start_row, end_row, (end_row - start_row) + 1);
+		fprintf(stdout, "tid %d:\trows:\t %d:%d\t(%d)\n", 
+				w_args[i].mytid, start_row, end_row, (end_row - start_row) + 1);
 		fflush(stdout);
 	}
 }
@@ -190,7 +191,6 @@ void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
  */
 void *sim(void *args) {
 	WorkerArgs *w_args = (WorkerArgs*)args;	
-	printf("Thread id: %d\n", w_args->mytid);
 	if (w_args->mytid == 0) {
 		if (w_args->verbose == 1) {
 			printf("\nVerbose mode\n");
@@ -325,10 +325,10 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 void printBoard(int *board, BoardSpecs *bs) {
 	for (int i = 0; i < bs->size; i++) {
 		if (board[i] == 0) { 
-			printf(". "); 
+			printf("˙ "); 
 		}
 		else { 
-			printf("@ "); 
+			printf(" "); 
 		}
 		if (((i + 1) % bs->num_cols) == 0) { 
 			printf("\n"); 
