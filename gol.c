@@ -10,12 +10,12 @@
 
 #define _XOPEN_SOURCE 600
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 typedef struct {
 	int num_rows;
@@ -36,7 +36,7 @@ typedef struct {
 } WorkerArgs;
 
 void printError(); 
-void *sim(void* args); //TODO: how to proprly pass struct to void*args
+void *sim(void* args); 
 void printBoardSpecs(BoardSpecs *b); 
 int to1d(int row, int col, BoardSpecs *bs);
 void printBoard(int *board, BoardSpecs *bs); 
@@ -48,6 +48,7 @@ void timeval_subtract(struct timeval *result,
 					struct timeval *end, struct timeval *start); 
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, 
 		int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier); 
+
 /**
  * Prints out a reminder of how to run the program.
  * @param executable_name String containing the name of the executable
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct timeval start_time, curr_time, result;
-	gettimeofday(&start_time, NULL); 	// get start time before starting game
+	gettimeofday(&start_time, NULL); 	
 
 	createThreads(thread_args, board, bs, verbose, tids, num_threads, my_barrier);
 
@@ -111,8 +112,8 @@ int main(int argc, char *argv[]) {
 	
 	pthread_barrier_destroy(&my_barrier);
 
-	gettimeofday(&curr_time, NULL); 	// check time after game
-	timeval_subtract(&result, &curr_time, &start_time); // calculate time for program
+	gettimeofday(&curr_time, NULL); 
+	timeval_subtract(&result, &curr_time, &start_time); 
 	
 	if(p == 1) {
 		printThreadStats(thread_args, num_threads, bs->num_rows);
@@ -135,9 +136,9 @@ int main(int argc, char *argv[]) {
  * @param *thread_args - a struct containing each threads arguements 
  * @param *board - pointer to the array which represents the game board
  * @param verbose - int value determining if verbose mode should be enabled
- * @param *tids - 
+ * @param *tids - Array of worker threads
  * @param num_threads - the number of worker threads to be created (4 default)
- * @param my_barrier - 
+ * @param my_barrier - pthread Barrier
  */
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier) {
 	for (int i = 0; i < num_threads; i++) {
@@ -155,6 +156,7 @@ void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verb
 
 		int d = bs->num_rows / num_threads;
 		int r = bs->num_rows % num_threads;
+
 		if (i < r) {
 			thread_args[i].end = thread_args[i].start + (d + 1) * bs->num_cols;
 		}
@@ -165,6 +167,12 @@ void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verb
 	}
 }
 
+/**
+ * Print the statistics for each thread
+ * @param w_args The arguments for worker threads
+ * @num_threads Number of worker threads
+ * @num_rows Number of rows in the game board
+ */
 void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
 	for(int i = 0; i < num_threads; i++) {
 		int start_row = w_args[i].start / num_rows;
