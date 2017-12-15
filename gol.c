@@ -134,11 +134,11 @@ int main(int argc, char *argv[]) {
  */
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier) {
 	for (int i = 0; i < num_threads; i++) {
-		thread_args[i].my_barrier = &my_barrier;
-		thread_args[i].verbose = verbose;
 		thread_args[i].bs = bs;
 		thread_args[i].mytid = i;
 		thread_args[i].board = board;
+		thread_args[i].verbose = verbose;
+		thread_args[i].my_barrier = &my_barrier;
 		if (i == 0) {
 			thread_args[i].start = 0;
 		}
@@ -183,7 +183,6 @@ void *sim(void *args) {
 	}
 	int its = w_args->bs->num_its;
 	for (int i = 0; i < its; i++) {
-		//pthread_barrier_wait(w_args->my_barrier);
 		updateBoard(w_args->board, w_args->bs, w_args->start, w_args->end, w_args->my_barrier); 
 		if (w_args->mytid == 0) {
 			if (w_args->verbose == 1) {
@@ -215,7 +214,6 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier
 
 	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
-			//number of alive surrounding cells
 			num_alive = numAlive(board, bs, i, j);	
 			if (board[to1d(i,j,bs)] == 0) {
 				if (num_alive == 3) {
@@ -292,7 +290,6 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 
 	int *board = (int*) calloc((bs->num_rows * bs->num_cols), sizeof(int));
 
-	// spots for initial state
 	int col, row;
 	for (int i = 0; i < bs->num_pairs; i++) {
 		fscanf(fp, "%d %d", &col, &row); 
@@ -361,7 +358,6 @@ int to1d(int row, int col, BoardSpecs *bs) {
 /**
  * Calculates the amount of time between start and end
  * Taken from Dr Sat's starter code/GNU documentation
- *
  * @param start The start time
  * @param end The end time
  * @param result The resulting time difference
@@ -369,7 +365,6 @@ int to1d(int row, int col, BoardSpecs *bs) {
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start) 
 {
-	// Perform the carry for later subracting by updating start
 	if (end->tv_usec < start->tv_usec) {
 		int nsec = (start->tv_usec - end->tv_usec) / 1000000 + 1;
 		start->tv_usec -= 1000000 * nsec;
@@ -380,8 +375,6 @@ void timeval_subtract(struct timeval *result,
 		start->tv_usec += 1000000 * nsec;
 		start->tv_sec -= nsec;
 	}
-
-	// Compute the time remaining to wait.tv_usec is certainly positive
 	result->tv_sec = end->tv_sec - start->tv_sec;
 	result->tv_usec = end->tv_usec - start->tv_usec;
 }
