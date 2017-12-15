@@ -19,20 +19,20 @@
 #include <sys/time.h>
 
 typedef struct {
+	int size;
+	int num_its;
 	int num_rows;
 	int num_cols;
-	int num_its;
 	int num_pairs;
-	int size;
 } BoardSpecs; 
 
 typedef struct {
-	BoardSpecs *bs;
-	int *board;
-	int verbose;
+	int end;
 	int mytid;
 	int start;
-	int end;
+	int *board;
+	int verbose;
+	BoardSpecs *bs;
 	pthread_barrier_t *my_barrier;
 } WorkerArgs;
 
@@ -59,11 +59,11 @@ void usage(char *executable_name) {
 }
 
 int main(int argc, char *argv[]) {
-	char *ascii_filename = NULL;
-	int num_threads = 4;
-	int verbose = 0;
-	int c = -1; 
 	int p = 0;
+	int c = -1; 
+	int verbose = 0;
+	int num_threads = 4;
+	char *ascii_filename = NULL;
 		
 	opterr = 0;
 	while ((c = getopt(argc, argv, "c:vt:p")) != -1) {
@@ -124,22 +124,22 @@ int main(int argc, char *argv[]) {
 					bs->num_its, bs->num_cols, bs->num_rows);
 	printf("%ld.%06ld\n", result.tv_sec, result.tv_usec);	
 
-	free(thread_args);
+	free(bs);
 	free(tids);
 	free(board);
-	free(bs);
+	free(thread_args);
 	return 0;
 }
 
 /**
  * Populate thread args, creates threads, calls sim on each thread
  *
+ * @param my_barrier - pthread Barrier
+ * @param *tids - Array of worker threads
  * @param *thread_args - a struct containing each threads arguements 
  * @param *board - pointer to the array which represents the game board
  * @param verbose - int value determining if verbose mode should be enabled
- * @param *tids - Array of worker threads
  * @param num_threads - the number of worker threads to be created (4 default)
- * @param my_barrier - pthread Barrier
  */
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier) {
 	for (int i = 0; i < num_threads; i++) {
@@ -210,7 +210,7 @@ void *sim(void *args) {
 				}
 			}
 		}
-		pthread_barrier_wait(w_args->my_barrier);
+		//pthread_barrier_wait(w_args->my_barrier);
 	}
 	return NULL;
 }
@@ -325,10 +325,10 @@ int* initBoard(char* ascii_filename, BoardSpecs *bs) {
 void printBoard(int *board, BoardSpecs *bs) {
 	for (int i = 0; i < bs->size; i++) {
 		if (board[i] == 0) { 
-			printf("."); 
+			printf(". "); 
 		}
 		else { 
-			printf("@"); 
+			printf("@ "); 
 		}
 		if (((i + 1) % bs->num_cols) == 0) { 
 			printf("\n"); 
