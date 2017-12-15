@@ -131,6 +131,13 @@ int main(int argc, char *argv[]) {
 
 /**
  * Populate thread args, creates threads, calls sim on each thread
+ *
+ * @param *thread_args - a struct containing each threads arguements 
+ * @param *board - pointer to the array which represents the game board
+ * @param verbose - int value determining if verbose mode should be enabled
+ * @param *tids - 
+ * @param num_threads - the number of worker threads to be created (4 default)
+ * @param my_barrier - 
  */
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier) {
 	for (int i = 0; i < num_threads; i++) {
