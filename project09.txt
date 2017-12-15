@@ -1,15 +1,15 @@
 COMP 280 - Project 06 (Game of Life)
 
 1. Author:		Patrick Hall
+				James Ponwith
 
 2. Total Hours Spent on Project: 
-	20
+	13	
 
 3. Did you attempt the advanced component?
 	No
 
 4. Project Bucks Used:
-	None yet
+	0
 
 5. (Optional) Additional Comments:
-	I may try the advanced component tomorrow, using a project buck
