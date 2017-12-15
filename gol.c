@@ -35,21 +35,19 @@ typedef struct {
 	pthread_barrier_t *my_barrier;
 } WorkerArgs;
 
-void *Malloc(size_t size);
 void printError(); 
+void *sim(void* args); //TODO: how to proprly pass struct to void*args
 void printBoardSpecs(BoardSpecs *b); 
 int to1d(int row, int col, BoardSpecs *bs);
 void printBoard(int *board, BoardSpecs *bs); 
-void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier_t *pbt); 
-//void *sim(int *board, BoardSpecs *bs, int verbose); 
-void *sim(void* args); //TODO: how to proprly pass struct to void*args
 int* initBoard(char *ascii_filename, BoardSpecs *b);
 int numAlive(int *board, BoardSpecs *bs, int row, int col); 
+void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows);
+void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier_t *pbt); 
 void timeval_subtract(struct timeval *result, 
 					struct timeval *end, struct timeval *start); 
-void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows);
-
-void Filename(char *ascii_filename, char optarg);
+void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, 
+		int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier); 
 /**
  * Prints out a reminder of how to run the program.
  * @param executable_name String containing the name of the executable
@@ -105,29 +103,7 @@ int main(int argc, char *argv[]) {
 	struct timeval start_time, curr_time, result;
 	gettimeofday(&start_time, NULL); 	// get start time before starting game
 
-	for (int i = 0; i < num_threads; i++) {
-		thread_args[i].my_barrier = &my_barrier;
-		thread_args[i].verbose = verbose;
-		thread_args[i].bs = bs;
-		thread_args[i].mytid = i;
-		thread_args[i].board = board;
-		if (i == 0) {
-			thread_args[i].start = 0;
-		}
-		else {
-			thread_args[i].start = thread_args[i - 1].end + 1;
-		}
-
-		int d = bs->num_rows / num_threads;
-		int r = bs->num_rows % num_threads;
-		if (i < r) {
-			thread_args[i].end = thread_args[i].start + (d + 1) * bs->num_cols;
-		}
-		else {
-			thread_args[i].end = thread_args[i].start + d * bs->num_cols;
-		}
-		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
-	}
+	createThreads(thread_args, board, bs, verbose, tids, num_threads, my_barrier);
 
 	for (int i = 0; i < num_threads; i++) {
 		pthread_join(tids[i], NULL);
@@ -153,14 +129,40 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
+/**
+ * Populate thread args, creates threads, calls sim on each thread
+ */
+void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier) {
+	for (int i = 0; i < num_threads; i++) {
+		thread_args[i].my_barrier = &my_barrier;
+		thread_args[i].verbose = verbose;
+		thread_args[i].bs = bs;
+		thread_args[i].mytid = i;
+		thread_args[i].board = board;
+		if (i == 0) {
+			thread_args[i].start = 0;
+		}
+		else {
+			thread_args[i].start = thread_args[i - 1].end + 1;
+		}
 
-	int i;
-	for(i = 0; i < num_threads; i++) {
+		int d = bs->num_rows / num_threads;
+		int r = bs->num_rows % num_threads;
+		if (i < r) {
+			thread_args[i].end = thread_args[i].start + (d + 1) * bs->num_cols;
+		}
+		else {
+			thread_args[i].end = thread_args[i].start + d * bs->num_cols;
+		}
+		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
+	}
+}
+
+void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows) {
+	for(int i = 0; i < num_threads; i++) {
 		int start_row = w_args[i].start / num_rows;
 		int end_row = (w_args[i].end / num_rows) - 1;
-
-		fprintf(stdout, "tid %d: rows: %d:%d (%d)\n", w_args[i].mytid, start_row, end_row, (end_row - start_row));
+		fprintf(stdout, "tid %d:\trows:\t %d:%d\t(%d)\n", w_args[i].mytid, start_row, end_row, (end_row - start_row) + 1);
 		fflush(stdout);
 	}
 }
@@ -188,7 +190,7 @@ void *sim(void *args) {
 				printf("Time step: %d\n", i);
 				printBoard(w_args->board, w_args->bs);
 				usleep(100000 * 2);
-				if (!(i == w_args->bs->num_its)) {
+				if (!(i == its - 1)) {
 					system("clear");
 				}
 			}
@@ -382,14 +384,4 @@ void timeval_subtract(struct timeval *result,
 	// Compute the time remaining to wait.tv_usec is certainly positive
 	result->tv_sec = end->tv_sec - start->tv_sec;
 	result->tv_usec = end->tv_usec - start->tv_usec;
-}
-
-//wrapper for malloc calling perror and exit on error
-void *Malloc(size_t size) {
-	void *ret = malloc(size);
-	if (!ret) {
-		perror("malloc array");
-		exit(1);
-	}
-	return ret;
 }
