@@ -46,7 +46,7 @@ int numAlive(int *board, BoardSpecs *bs, int row, int col);
 void printThreadStats(WorkerArgs *w_args, int num_threads, int num_rows);
 void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier_t *pbt); 
 void timeval_subtract(struct timeval *result, 
-					struct timeval *end, struct timeval *start); 
+		struct timeval *end, struct timeval *start); 
 void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, 
 		int verbose, pthread_t *tids, int num_threads, pthread_barrier_t my_barrier); 
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	int verbose = 0;
 	int num_threads = 4;
 	char *ascii_filename = NULL;
-		
+
 	opterr = 0;
 	while ((c = getopt(argc, argv, "c:vt:p")) != -1) {
 		switch(c) {
@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
 
 	int *board = initBoard(ascii_filename, bs);
 
-	if (num_threads > bs->num_rows) {
-		printf("Number of threads cannot be greater than number of rows\nexiting...\n");
+	if (num_threads > bs->num_rows || num_threads <= 0) {
+		printf("ERROR: invalid number of threads\n");
 		exit(1);
 	}
 
@@ -115,18 +115,18 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < num_threads; i++) {
 		pthread_join(tids[i], NULL);
 	}
-	
+
 	pthread_barrier_destroy(&my_barrier);
 
 	gettimeofday(&curr_time, NULL); 
 	timeval_subtract(&result, &curr_time, &start_time); 
-	
+
 	if(p == 1) {
 		printThreadStats(thread_args, num_threads, bs->num_rows);
 	}
 
 	printf("Total time for %d iterations of %dx%d world is ", 
-					bs->num_its, bs->num_cols, bs->num_rows);
+			bs->num_its, bs->num_cols, bs->num_rows);
 	printf("%ld.%06ld\n", result.tv_sec, result.tv_usec);	
 
 	free(bs);
@@ -384,7 +384,7 @@ int to1d(int row, int col, BoardSpecs *bs) {
  * @param result The resulting time difference
  */
 void timeval_subtract(struct timeval *result, 
-					struct timeval *end, struct timeval *start) 
+		struct timeval *end, struct timeval *start) 
 {
 	if (end->tv_usec < start->tv_usec) {
 		int nsec = (start->tv_usec - end->tv_usec) / 1000000 + 1;
