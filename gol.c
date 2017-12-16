@@ -96,6 +96,11 @@ int main(int argc, char *argv[]) {
 
 	int *board = initBoard(ascii_filename, bs);
 
+	if (num_threads > bs->num_rows) {
+		printf("Number of threads cannot be greater than number of rows\nexiting...\n");
+		exit(1);
+	}
+
 	pthread_barrier_t my_barrier;
 	if (pthread_barrier_init(&my_barrier, NULL, num_threads) != 0) {
 		perror("pthread_barrier_init error\n");
