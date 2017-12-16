@@ -2,11 +2,13 @@
  * File: gol.c
  * Author: Patrick Hall 
  *		   James Ponwith
- * This program simulates Conway's game of life with multiple threads.
- * The number of threads is specified by the -t argument; it is 4 by default
+ * This program simulates Conway's game of life using multiple threads.
+ * The number of threads is specified by the -t argument; it is 4 by default.
  * The starting board specifications are passed through the command line
  * argument.
- * The program will run until the specified number of iterations has passed 
+ * The program will run until the specified number of iterations has passed.
+ * Ex: ./gol -c tests/test.txt -v -t 10 -p
+ *
  */
 
 #define _XOPEN_SOURCE 600
@@ -89,7 +91,7 @@ int main(int argc, char *argv[]) {
 				exit(1);
 		}
 	}
-
+	// Allocate memory for threads and board
 	pthread_t *tids = malloc(num_threads *sizeof(pthread_t));
 	WorkerArgs *thread_args = malloc(num_threads *sizeof(WorkerArgs));
 	BoardSpecs *bs = malloc(sizeof(BoardSpecs));
@@ -109,13 +111,18 @@ int main(int argc, char *argv[]) {
 
 	struct timeval start_time, curr_time, result;
 	gettimeofday(&start_time, NULL); 	
-
+	
+	/* Creates worker threads, runs game in parallel, and collectively updates
+	 * the board.
+	*/
 	createThreads(thread_args, board, bs, verbose, tids, num_threads, my_barrier);
 
+	// Join and handle worker threads
 	for (int i = 0; i < num_threads; i++) {
 		pthread_join(tids[i], NULL);
 	}
-
+	
+	// Destroy barrier
 	pthread_barrier_destroy(&my_barrier);
 
 	gettimeofday(&curr_time, NULL); 
@@ -129,6 +136,7 @@ int main(int argc, char *argv[]) {
 			bs->num_its, bs->num_cols, bs->num_rows);
 	printf("%ld.%06ld\n", result.tv_sec, result.tv_usec);	
 
+	// Frees all dynamically allocated memory
 	free(bs);
 	free(tids);
 	free(board);
@@ -153,22 +161,29 @@ void createThreads(WorkerArgs *thread_args, int *board, BoardSpecs* bs, int verb
 		thread_args[i].board = board;
 		thread_args[i].verbose = verbose;
 		thread_args[i].my_barrier = &my_barrier;
+		// Provide the first thread with starting row 0
 		if (i == 0) {
 			thread_args[i].start = 0;
 		}
+		// Set start row to proceeding threads
 		else {
 			thread_args[i].start = thread_args[i - 1].end + 1;
 		}
 
+		// Get the number of rows for each thread to do
 		int d = bs->num_rows / num_threads;
+		// Get the remainder for case the threads and row do not divide evenly
 		int r = bs->num_rows % num_threads;
-
+		
+		// If thread id is less than the remainder do an additional row  
 		if (i < r) {
 			thread_args[i].end = thread_args[i].start + (d + 1) * bs->num_cols;
 		}
+		// Handle the threads that are accepting the even number of divisible
 		else {
 			thread_args[i].end = thread_args[i].start + d * bs->num_cols;
 		}
+		// Spawn threads
 		pthread_create(&tids[i], NULL, sim, &thread_args[i]);
 	}
 }
@@ -254,12 +269,14 @@ void updateBoard(int *board, BoardSpecs *bs, int start, int end, pthread_barrier
 			}
 		}
 	}
+	// Pause and wait for all threads to gather
 	pthread_barrier_wait(pbt);
 	for (int i = start_r; i < end_r; i++) {
 		for (int j = 0; j < bs->num_cols; j++) {
 			board[to1d(i,j,bs)] = tmp_board[to1d(i,j,bs)];
 		}
 	}
+	// Pause and wait again
 	pthread_barrier_wait(pbt);
 	free(tmp_board);
 }
